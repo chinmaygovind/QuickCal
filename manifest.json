@@ -8,7 +8,8 @@
       "default_icon": "images/quickcal.png"
     },
     "permissions": [
-        "contextMenus"
+        "contextMenus",
+        "activeTab"
     ],
     "background": {
         "service_worker": "quickcal.js"

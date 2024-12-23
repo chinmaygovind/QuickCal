@@ -11,16 +11,24 @@ async function genericOnClick(info) {
     const dateTimeFormat = new Intl.DateTimeFormat().resolvedOptions();
     const timezone = dateTimeFormat.timeZone;
 
+    const [tab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
+    const currentURL = tab.url;
+    const safeURL = encodeURIComponent(currentURL);
+
     let prompt = `
-    I will give you some text that I want you to parse.
+    I will give you some text that I want you to parse. The text should describe an event.
     Please provide a raw JSON response with the following fields:
 
-    link: A calendar link containing the event details. Must include date, time in the user's local timezone. Use the user's timezone ${timezone} and add that as the "ctz" field of the link.
-    Use the event's timezone if given, otherwise default to user's timezone. Also include a 1-2 sentence description of the event in the link.
-    Include location if possible. If no event is identified, return "quickcal/missing_event.html".
-    missing: If no event was found, provide a field called "missing" with a sentence explaining what details were missing about the event.
+    title: the title of the event.
+    timestamp_start: a UTC timestamp of when the event starts in the format YYYYMMDDTHHMMSS.
+    timestamp_end: a UTC timestamp of when the event ends in the format YYYYMMDDTHHMMSS. (If not given, default to one hour after start.)
+    location: the location of the event. 
+    description: a short 2-3 sentence description of the event containing any pertinent information or links.
+    
+    missing: a list with any of the above fields (title, timestamp_start, timestamp_end, location, description) which are not described in the event.
+    
     Please parse the following text: 
-    Today's date is ${fullDate}. Make sure to take daylight savings time into account when calculating the event time. ${selectedText}
+    Today's date is ${fullDate}. ${selectedText}
     `
     sendPromptToGemini(prompt, (error, data) => {
         if (error) {
@@ -31,16 +39,9 @@ async function genericOnClick(info) {
             const lines = response.split('\n');
             response = lines.slice(1, -1).join('\n');
             response = JSON.parse(response);
-            let link = response["link"];
-            console.log(response);
-            if (link.startsWith("http")) {
-                console.log("Successfully grabbed calendar event.")
-                chrome.tabs.create({ url: link });
-            } else {
-                console.log("Failed to extract calendar event.")
-                let missing = response["missing"];
-                chrome.tabs.create({ url: chrome.extension.getURL(`quickcal/missing_event.html?missing=${missing}`) });
-            }
+            // https://www.google.com/calendar/render?action=TEMPLATE&text=Your+Event+Name&dates=20140127T224000Z/20140320T221500Z&details=For+details,+link+here:+http://www.example.com&location=Waldorf+Astoria,+301+Park+Ave+,+New+York,+NY+10022&sf=true&output=xml
+            let link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${response['title']}&dates=${response['timestamp_start']}/${response['timestamp_end']}&details=${response['description']}&location=${response['location'] ?? ""}`
+            chrome.tabs.create({ url: link });
         }
       });
 }
