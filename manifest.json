@@ -5,11 +5,13 @@
     "manifest_version": 3,
     "action": {
       "default_popup": "quickcal/popup.html",
-      "default_icon": "images/quickcal.png"
+      "default_icon": "images/quickcal.png",
+      "default_title": "QuickCal"
     },
     "permissions": [
         "contextMenus",
-        "activeTab"
+        "activeTab",
+        "storage"
     ],
     "background": {
         "service_worker": "quickcal.js"

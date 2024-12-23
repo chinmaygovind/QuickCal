@@ -1,8 +1,34 @@
+chrome.runtime.onStartup.addListener(() => {
+    initializeExtension();
+});
+  
+chrome.runtime.onInstalled.addListener(() => {
+    initializeExtension();
+});
+
+let API_KEY = null;
+async function initializeExtension() {
+    chrome.storage.sync.get("apiKey", async ({ apiKey }) => {
+      if (!apiKey) {
+        console.log("No API key found. Please authenticate.");
+        return; // Remain in unauthenticated state
+      }
+  
+    console.log("API key is valid. Starting background service...");
+    API_KEY = apiKey;
+    });
+  }
+
 // A generic onclick callback function.
 chrome.contextMenus.onClicked.addListener(genericOnClick);
 
 // A generic onclick callback function.
 async function genericOnClick(info) {
+    if (API_KEY === null) {
+        chrome.action.openPopup()
+        console.log("Invalid API key.");
+        return;
+    }
     let selectedText = info.selectionText;
 
     const today = new Date();
@@ -20,7 +46,7 @@ async function genericOnClick(info) {
     Please provide a raw JSON response with the following fields:
 
     title: the title of the event.
-    timestamp_start: a UTC timestamp of when the event starts in the format YYYYMMDDTHHMMSS.
+    timestamp_start: a UTC timestamp of when the event starts in the format YYYYMMDDTHHMMSS. If no year is given, default to the upcoming instance of that date.
     timestamp_end: a UTC timestamp of when the event ends in the format YYYYMMDDTHHMMSS. (If not given, default to one hour after start.)
     location: the location of the event. 
     description: a short 2-3 sentence description of the event containing any pertinent information or links.
@@ -30,6 +56,7 @@ async function genericOnClick(info) {
     Please parse the following text: 
     Today's date is ${fullDate}. ${selectedText}
     `
+
     sendPromptToGemini(prompt, (error, data) => {
         if (error) {
           console.log(error);
@@ -61,7 +88,6 @@ chrome.runtime.onInstalled.addListener(function () {
  * @param {function} callback - A callback to handle the API response or errors.
  */
 function sendPromptToGemini(prompt, callback) {
-    let API_KEY = "AIzaSyD6F3cCRFrcHj4zdi5iXwAiRPQvnE0ctsc";
     let request_contents = {
         "contents": [{
             "parts":[{"text": prompt}]
@@ -82,6 +108,6 @@ function sendPromptToGemini(prompt, callback) {
     })
     .then((data) => callback(null, data))
     .catch((error) => callback(`Error: ${error.message}`));
-  }
+}
 
   

@@ -1,6 +1,20 @@
-<html>
-  <body>
-    <h1>QuickCal</h1>
-    <h2>Easily add events to your Google Calendar!</h2>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Gemini API</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="container">
+    <h1>Setup Gemini API</h1>
+    <p>Please enter your Gemini API key to start using the extension.</p>
+    <a href="./setup/setup.html" target="_blank">How to Generate an API Key</a>
+    <input type="text" id="apiKey" placeholder="Enter API Key">
+    <button id="submitKey">Submit</button>
+    <p id="statusMessage" style="color: red;"></p>
+  </div>
+  <script src="validate_key.js"></script>
+</body>
 </html>
