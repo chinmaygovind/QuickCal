@@ -7,7 +7,7 @@ chrome.storage.sync.get("apiKey", async ({ apiKey }) => {
       `
       <h1>QuickCal<\h1>
       <h4>Your API Key is valid! Enjoy using QuickCal<\h4>
-      <h4>API Key: ${apiKey}
+      <h4>Your API Key: ${apiKey}<\h4>
       `;
     }
 });

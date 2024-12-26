@@ -10,6 +10,7 @@ let API_KEY = null;
 async function initializeExtension() {
     chrome.storage.sync.get("apiKey", async ({ apiKey }) => {
       if (!apiKey) {
+        chrome.action.openPopup()
         console.log("No API key found. Please authenticate.");
         return; // Remain in unauthenticated state
       }
@@ -25,9 +26,7 @@ chrome.contextMenus.onClicked.addListener(genericOnClick);
 // A generic onclick callback function.
 async function genericOnClick(info) {
     if (API_KEY === null) {
-        chrome.action.openPopup()
-        console.log("Invalid API key.");
-        return;
+        initializeExtension();
     }
     let selectedText = info.selectionText;
 
@@ -67,7 +66,7 @@ async function genericOnClick(info) {
             response = lines.slice(1, -1).join('\n');
             response = JSON.parse(response);
             // https://www.google.com/calendar/render?action=TEMPLATE&text=Your+Event+Name&dates=20140127T224000Z/20140320T221500Z&details=For+details,+link+here:+http://www.example.com&location=Waldorf+Astoria,+301+Park+Ave+,+New+York,+NY+10022&sf=true&output=xml
-            let link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${response['title']}&dates=${response['timestamp_start']}/${response['timestamp_end']}&details=${response['description']}&location=${response['location'] ?? ""}`
+            let link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${response['title'] ?? "PLACEHOLDER TITLE"}&dates=${response['timestamp_start']}/${response['timestamp_end']}&details=${response['description'] ?? selectedText}&location=${response['location'] ?? ""}`
             chrome.tabs.create({ url: link });
         }
       });
