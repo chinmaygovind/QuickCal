@@ -1,0 +1,9 @@
+runtime: python39
+
+entrypoint: gunicorn -b :$PORT app:app
+
+handlers:
+- url: /static
+  static_dir: appp/static
+- url: /.*
+  script: auto

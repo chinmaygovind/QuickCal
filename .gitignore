@@ -1,1 +1,16 @@
 node_modules/
+*.pyc
+__pycache__/
+instance/
+.db
+service_account_key.json
+semantic_retrieval.py
+node_modules
+knowledgebase.py
+env/
+venv
+.env
+Lib
+Scripts
+data/
+AQA.py
