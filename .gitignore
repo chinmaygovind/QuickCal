@@ -8,6 +8,7 @@ semantic_retrieval.py
 node_modules
 knowledgebase.py
 env/
+venv
 .env
 Lib
 Scripts
