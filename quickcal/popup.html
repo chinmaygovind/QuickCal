@@ -5,15 +5,120 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Setup Gemini API</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    :root {
+      --quickcal-green: #43b581;
+      --quickcal-dark: #23272a;
+      --quickcal-light: #f4f7fa;
+      --quickcal-accent: #f9c846;
+      --quickcal-radius: 14px;
+      --quickcal-shadow: 0 4px 24px rgba(67, 181, 129, 0.08);
+    }
+    body {
+      background: var(--quickcal-light);
+      color: var(--quickcal-dark);
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-width: 320px;
+      min-height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #container {
+      background: #fff;
+      border-radius: var(--quickcal-radius);
+      box-shadow: var(--quickcal-shadow);
+      padding: 32px 24px 24px 24px;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(67, 181, 129, 0.12);
+      background: #fff;
+      object-fit: contain;
+    }
+    h1 {
+      color: var(--quickcal-green);
+      font-size: 1.3rem;
+      margin-bottom: 0.5em;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+    p {
+      color: #444;
+      font-size: 1rem;
+      margin: 0.5em 0 1em 0;
+      text-align: center;
+    }
+    a {
+      color: var(--quickcal-green);
+      text-decoration: underline;
+      font-size: 0.98rem;
+      margin-bottom: 1.2em;
+      transition: color 0.2s;
+    }
+    a:hover {
+      color: var(--quickcal-accent);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 7px;
+      font-size: 1rem;
+      margin: 0.5em 0 1em 0;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus {
+      border: 1.5px solid var(--quickcal-green);
+    }
+    button {
+      width: 100%;
+      padding: 10px 0;
+      background: var(--quickcal-green);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-size: 1.08rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 0.5em;
+      box-shadow: 0 2px 8px rgba(67, 181, 129, 0.10);
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      background: var(--quickcal-accent);
+      color: var(--quickcal-dark);
+      box-shadow: 0 4px 16px rgba(67, 181, 129, 0.18);
+    }
+    #statusMessage {
+      color: #e74c3c;
+      font-size: 0.98rem;
+      min-height: 1.2em;
+      margin-top: 0.5em;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <div id="container">
+    <img src="../images/quickcal.png" alt="QuickCal Logo" class="logo">
     <h1>Setup Gemini API</h1>
-    <p>Please enter your Gemini API key to start using the extension.</p>
+    <p>Please enter your Gemini API key to start using QuickCal.</p>
     <a href="./setup/setup.html" target="_blank">How to Generate an API Key</a>
     <input type="text" id="apiKey" placeholder="Enter API Key">
     <button id="submitKey">Submit</button>
-    <p id="statusMessage" style="color: red;"></p>
+    <p id="statusMessage"></p>
   </div>
   <script src="init.js"></script>
   <script src="validate_key.js"></script>

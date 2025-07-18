@@ -1,7 +1,7 @@
 {
     "name": "QuickCal",
-    "description": "Chrome extension to easily add events to your calendar.",
-    "version": "0.1",
+    "description": "Chrome extension to easily add events to your calendar. By Chinmay Govind.",
+    "version": "0.3",
     "manifest_version": 3,
     "action": {
       "default_popup": "quickcal/popup.html",
@@ -11,10 +11,12 @@
     "permissions": [
         "contextMenus",
         "activeTab",
-        "storage"
+        "storage",
+        "notifications"
     ],
     "background": {
-        "service_worker": "quickcal.js"
+        "service_worker": "quickcal.js",
+        "type": "module"
     },
     "icons": {
     "16": "images/icon-16.png",

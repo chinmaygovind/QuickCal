@@ -3,9 +3,11 @@ document.getElementById("submitKey").addEventListener("click", async () => {
     const statusMessage = document.getElementById("statusMessage");
   
     if (!apiKey) {
-      statusMessage.textContent = "API key cannot be empty.";
+      statusMessage.textContent = "Please enter an API key.";
       return;
     }
+    // Show checking message
+    statusMessage.textContent = 'Checking API Key...';
   
     try {
        validateApiKey(apiKey);
@@ -22,7 +24,7 @@ function validateApiKey(apiKey) {
             "parts":[{"text": "ping"}]
         }]
     }
-    fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`, {
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -38,7 +40,14 @@ function validateApiKey(apiKey) {
             statusMessage.textContent = `API Key is valid! Enjoy using QuickCal`;
             setTimeout(() => {
                 chrome.storage.sync.set({ apiKey }, () => {
-                    chrome.runtime.reload();
+                    statusMessage.style.color = "green";
+                    statusMessage.textContent = "API Key saved successfully! Reloading...";
+                    // Confirm the key is set visually
+                    chrome.storage.sync.get('apiKey', (result) => {
+                        setTimeout(() => {
+                            chrome.runtime.reload();
+                        }, 1000);
+                    });
                 });
             }, 1000);
             
