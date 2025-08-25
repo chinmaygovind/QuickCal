@@ -3,19 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Setup Gemini API</title>
+  <title>QuickCal Settings</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div id="container">
-    <h1>Setup Gemini API</h1>
-    <p>Please enter your Gemini API key to start using the extension.</p>
-    <a href="./setup/setup.html" target="_blank">How to Generate an API Key</a>
-    <input type="text" id="apiKey" placeholder="Enter API Key">
-    <button id="submitKey">Submit</button>
-    <p id="statusMessage" style="color: red;"></p>
+    <h1>QuickCal</h1>
+    <h4 style='color:green'>Ready to use! Highlight any text describing an event to begin!</h4>
+    <h3>Choose your Calendar Format</h3>
+    <label for="google_calendar">
+      <input type="radio" id="google_calendar" name="calendar_format" value="google_calendar">
+      Google Calendar
+    </label><br><br>
+    <label for="outlook_calendar">
+      <input type="radio" id="outlook_calendar" name="calendar_format" value="outlook_calendar">
+      Microsoft Outlook Calendar
+    </label><br><br>
+    <label for="apple_calendar">
+      <input type="radio" id="apple_calendar" name="calendar_format" value="apple_calendar">
+      Apple Calendar
+    </label><br><br>
+    <label for="other_calendar">
+      <input type="radio" id="other_calendar" name="calendar_format" value="other_calendar">
+      Other Calendar
+    </label><br><br>
   </div>
   <script src="init.js"></script>
-  <script src="validate_key.js"></script>
 </body>
 </html>

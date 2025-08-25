@@ -1,0 +1,46 @@
+{
+  "TableName": "quickcal-requests",
+  "KeySchema": [
+    {
+      "AttributeName": "requestId",
+      "KeyType": "HASH"
+    }
+  ],
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "requestId",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "userEmail",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "timestamp",
+      "AttributeType": "S"
+    }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "UserEmailIndex",
+      "KeySchema": [
+        {
+          "AttributeName": "userEmail",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "timestamp",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      },
+      "BillingMode": "PAY_PER_REQUEST"
+    }
+  ],
+  "BillingMode": "PAY_PER_REQUEST",
+  "StreamSpecification": {
+    "StreamEnabled": false
+  }
+}

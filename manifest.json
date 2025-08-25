@@ -12,7 +12,9 @@
         "contextMenus",
         "activeTab",
         "storage",
-        "notifications"
+        "notifications",
+        "identity",
+        "identity.email"
     ],
     "background": {
         "service_worker": "quickcal.js",
