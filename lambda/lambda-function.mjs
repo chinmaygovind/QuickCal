@@ -79,34 +79,6 @@ export const handler = async (event) => {
         
         const { selectedText, currentDate, timezone, sourceUrl, userEmail, sessionId } = requestBody;
 
-        // Store request in DynamoDB
-        const requestRecord = {
-            requestId: requestId,
-            timestamp: timestamp,
-            userEmail: userEmail || 'anonymous',
-            sessionId: sessionId || 'unknown',
-            selectedText: selectedText,
-            selectedTextLength: selectedText ? selectedText.length : 0,
-            selectedTextWords: selectedText ? selectedText.split(' ').length : 0,
-            currentDate: currentDate,
-            timezone: timezone,
-            sourceUrl: sourceUrl,
-            sourceIP: sourceIP,
-            userAgent: userAgent,
-            status: 'processing'
-        };
-
-        try {
-            await dynamoDb.send(new PutCommand({
-                TableName: REQUESTS_TABLE,
-                Item: requestRecord
-            }));
-            console.log('Request stored in database:', requestId);
-        } catch (dbError) {
-            console.error('Database storage failed:', dbError);
-            // Continue processing even if DB storage fails
-        }
-
         // Validate required fields
         if (!selectedText) {
             return {
@@ -129,9 +101,40 @@ export const handler = async (event) => {
         
         missing: a list with any of the above fields (title, timestamp_start, timestamp_end, location, description) which are not described in the event.
         
+        IMPORTANT: The user is in the ${timezone || 'UTC'} timezone. When parsing times mentioned in the text (like "3 PM", "2:30", "tomorrow at 5", etc.), interpret them as being in the user's timezone (${timezone || 'UTC'}) and then convert them to UTC for the timestamp fields.
+        
         Please parse the following text: 
-        Today's date is ${currentDate}. ${selectedText}
+        Today's date is ${currentDate}. User timezone: ${timezone || 'UTC'}. ${selectedText}
         `;
+
+        // Store request in DynamoDB
+        const requestRecord = {
+            requestId: requestId,
+            timestamp: timestamp,
+            userEmail: userEmail || 'anonymous',
+            sessionId: sessionId || 'unknown',
+            selectedText: selectedText,
+            selectedTextLength: selectedText ? selectedText.length : 0,
+            selectedTextWords: selectedText ? selectedText.split(' ').length : 0,
+            currentDate: currentDate,
+            timezone: timezone,
+            sourceUrl: sourceUrl,
+            sourceIP: sourceIP,
+            userAgent: userAgent,
+            status: 'processing',
+            promptSent: prompt
+        };
+
+        try {
+            await dynamoDb.send(new PutCommand({
+                TableName: REQUESTS_TABLE,
+                Item: requestRecord
+            }));
+            console.log('Request stored in database:', requestId);
+        } catch (dbError) {
+            console.error('Database storage failed:', dbError);
+            // Continue processing even if DB storage fails
+        }
 
         // Prepare request to Gemini API
         const geminiRequest = {
@@ -140,8 +143,24 @@ export const handler = async (event) => {
             }]
         };
 
+        // Record time before calling Gemini
+        const geminiStartTime = Date.now();
+
+        // Log detailed timezone info for debugging
+        console.log('TIMEZONE_DEBUG', JSON.stringify({
+            requestId: requestId,
+            timezone: timezone,
+            currentDate: currentDate,
+            selectedText: selectedText,
+            promptLength: prompt.length
+        }));
+
         // Call Gemini API
         const geminiResponse = await callGeminiAPI(geminiRequest);
+        
+        // Record time after calling Gemini
+        const geminiEndTime = Date.now();
+        const geminiResponseTimeMs = geminiEndTime - geminiStartTime;
         
         // Parse the response
         let responseText = geminiResponse.candidates[0].content.parts[0].text;
@@ -164,6 +183,9 @@ export const handler = async (event) => {
                     ...requestRecord,
                     status: 'success',
                     processingTimeMs: Date.now() - new Date(timestamp).getTime(),
+                    geminiResponseTimeMs: geminiResponseTimeMs,
+                    rawGeminiResponse: responseText,
+                    cleanedGeminiResponse: responseText,
                     resultTitle: eventData.title,
                     resultLocation: eventData.location,
                     resultStartTime: eventData.timestamp_start,
@@ -188,6 +210,7 @@ export const handler = async (event) => {
             timezone: timezone || 'not-provided',
             sourceUrl: sourceUrl || 'not-provided',
             processingTimeMs: Date.now() - new Date(timestamp).getTime(),
+            geminiResponseTimeMs: geminiResponseTimeMs,
             eventFields: {
                 hasTitle: !!eventData.title,
                 hasLocation: !!eventData.location,

@@ -27,13 +27,102 @@ chrome.contextMenus.onClicked.addListener(genericOnClick);
 async function genericOnClick(info) {
     let selectedText = info.selectionText;
 
-    // Show Chrome notification for processing
-    chrome.notifications.create('quickcal-processing', {
-        type: 'basic',
-        iconUrl: 'images/quickcal.png',
-        title: 'QuickCal',
-        message: 'Processing selection...'
+    // Record start time for processing duration
+    const processingStartTime = Date.now();
+
+    // Get current tab for visual indicator and URL
+    const [activeTab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
+    
+    // Create a floating notification on the page
+    chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        func: () => {
+            // Create floating indicator with progress bar
+            const indicator = document.createElement('div');
+            indicator.id = 'quickcal-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4285f4;
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                font-weight: 500;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            `;
+            
+            // Create circular progress bar
+            const progressContainer = document.createElement('div');
+            progressContainer.style.cssText = `
+                width: 20px;
+                height: 20px;
+                position: relative;
+            `;
+            
+            const progressSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            progressSvg.style.cssText = `
+                width: 20px;
+                height: 20px;
+                transform: rotate(-90deg);
+            `;
+            progressSvg.setAttribute('viewBox', '0 0 20 20');
+            
+            // Background circle
+            const backgroundCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            backgroundCircle.setAttribute('cx', '10');
+            backgroundCircle.setAttribute('cy', '10');
+            backgroundCircle.setAttribute('r', '8');
+            backgroundCircle.setAttribute('fill', 'none');
+            backgroundCircle.setAttribute('stroke', 'rgba(255,255,255,0.3)');
+            backgroundCircle.setAttribute('stroke-width', '2');
+            
+            // Progress circle
+            const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            progressCircle.setAttribute('cx', '10');
+            progressCircle.setAttribute('cy', '10');
+            progressCircle.setAttribute('r', '8');
+            progressCircle.setAttribute('fill', 'none');
+            progressCircle.setAttribute('stroke', 'white');
+            progressCircle.setAttribute('stroke-width', '2');
+            progressCircle.setAttribute('stroke-linecap', 'round');
+            const circumference = 2 * Math.PI * 8;
+            progressCircle.setAttribute('stroke-dasharray', circumference);
+            progressCircle.setAttribute('stroke-dashoffset', circumference);
+            progressCircle.style.transition = 'stroke-dashoffset 7s linear';
+            
+            progressSvg.appendChild(backgroundCircle);
+            progressSvg.appendChild(progressCircle);
+            progressContainer.appendChild(progressSvg);
+            
+            // Text content
+            const textContent = document.createElement('span');
+            textContent.textContent = '🗓️ QuickCal processing...';
+            
+            indicator.appendChild(progressContainer);
+            indicator.appendChild(textContent);
+            document.body.appendChild(indicator);
+            
+            // Animate in
+            setTimeout(() => {
+                indicator.style.opacity = '1';
+                indicator.style.transform = 'translateY(0)';
+                // Start progress animation
+                progressCircle.style.strokeDashoffset = '0';
+            }, 10);
+        }
     });
+    
+    console.log('QuickCal: Started processing selection');
 
     const today = new Date();
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -41,8 +130,7 @@ async function genericOnClick(info) {
     const dateTimeFormat = new Intl.DateTimeFormat().resolvedOptions();
     const timezone = dateTimeFormat.timeZone;
 
-    const [tab] = await chrome.tabs.query({active: true, lastFocusedWindow: true});
-    const currentURL = tab.url;
+    const currentURL = activeTab.url;
     const safeURL = encodeURIComponent(currentURL);
 
     // Get user email (if available from Chrome)
@@ -72,32 +160,113 @@ async function genericOnClick(info) {
     };
 
     sendToLambda(requestPayload, (error, response) => {
-        // Clear visual indicator when done
-        chrome.action.setBadgeText({ text: '' });
-        // Clear notification when done
-        chrome.notifications.clear('quickcal-processing');
+        // Calculate processing time
+        const processingEndTime = Date.now();
+        const processingTimeSeconds = ((processingEndTime - processingStartTime) / 1000).toFixed(2);
         
         if (error) {
             console.error('Lambda error:', error);
-            chrome.notifications.create('quickcal-error', {
-                type: 'basic',
-                iconUrl: 'images/quickcal.png',
-                title: 'QuickCal Error',
-                message: 'Failed to process event. Please try again.'
+            
+            // Update indicator to show error
+            chrome.scripting.executeScript({
+                target: { tabId: activeTab.id },
+                func: (processingTime) => {
+                    const indicator = document.getElementById('quickcal-indicator');
+                    if (indicator) {
+                        indicator.style.background = '#d93025';
+                        
+                        // Update text content
+                        const textSpan = indicator.querySelector('span');
+                        if (textSpan) {
+                            textSpan.textContent = '❌ QuickCal failed';
+                        }
+                        
+                        // Hide progress bar
+                        const progressContainer = indicator.querySelector('div');
+                        if (progressContainer) {
+                            progressContainer.style.display = 'none';
+                        }
+                        
+                        // Remove after 3 seconds
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                            indicator.style.transform = 'translateY(-10px)';
+                            setTimeout(() => {
+                                if (indicator.parentNode) {
+                                    indicator.parentNode.removeChild(indicator);
+                                }
+                            }, 300);
+                        }, 3000);
+                    }
+                },
+                args: [processingTimeSeconds]
             });
+            
             return;
         }
+
+        // Update indicator to show success
+        chrome.scripting.executeScript({
+            target: { tabId: activeTab.id },
+            func: (processingTime) => {
+                const indicator = document.getElementById('quickcal-indicator');
+                if (indicator) {
+                    indicator.style.background = '#137333';
+                    
+                    // Update text content
+                    const textSpan = indicator.querySelector('span');
+                    if (textSpan) {
+                        textSpan.textContent = `✅ Event processed in ${processingTime}s`;
+                    }
+                    
+                    // Replace progress bar with checkmark
+                    const progressContainer = indicator.querySelector('div');
+                    if (progressContainer) {
+                        progressContainer.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 20 20" style="fill: white;">
+                                <path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+                            </svg>
+                        `;
+                    }
+                    
+                    // Remove after 2 seconds
+                    setTimeout(() => {
+                        indicator.style.opacity = '0';
+                        indicator.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            if (indicator.parentNode) {
+                                indicator.parentNode.removeChild(indicator);
+                            }
+                        }, 300);
+                    }, 2000);
+                }
+            },
+            args: [processingTimeSeconds]
+        });
+        
+        console.log(`QuickCal: Successfully processed in ${processingTimeSeconds} seconds`);
 
         // Process the response from Lambda
         let eventData = response;
         eventData['title'] ??= "PLACEHOLDER TITLE";
-        eventData['description'] ??= selectedText;
+        
+        // Enhance description with QuickCal attribution and processing time
+        let originalDescription = eventData['description'] || selectedText;
+        eventData['description'] = `${originalDescription}  Added by QuickCal in ${processingTimeSeconds} seconds.`;
+        
         eventData['location'] ??= "";
         
         chrome.storage.sync.get("calendar_preference", async ({ calendar_preference }) => {
             let format = calendar_preference ?? "google_calendar";
             if (format === "google_calendar") {
-                let link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventData['title']}&dates=${eventData['timestamp_start']}/${eventData['timestamp_end']}&details=${eventData['description']}&location=${eventData['location']}`
+                // Google Calendar expects timestamps in a specific format
+                // The timestamps from Lambda are in UTC, but Google Calendar might interpret them as local time
+                // Let's add 'Z' suffix to explicitly indicate UTC, or convert back to local time
+                
+                // Option 1: Add Z suffix to indicate UTC
+                let startTime = eventData['timestamp_start'] + 'Z';
+                let endTime = eventData['timestamp_end'] + 'Z';
+                let link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${eventData['title']}&dates=${startTime}/${endTime}&details=${eventData['description']}&location=${eventData['location']}`
                 chrome.tabs.create({ url: link });
             } else if (format === "outlook_calendar") {
                 let start_time = eventData['timestamp_start'].substring(0, 4) + "-" 
